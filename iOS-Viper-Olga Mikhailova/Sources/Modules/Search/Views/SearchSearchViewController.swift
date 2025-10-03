@@ -6,8 +6,9 @@
 //
 import UIKit
 
-final class SearchViewController: BaseViewController {
+final class SearchViewController: BaseViewController, SearchViewInput {
     
+    var output: SearchViewOutput?
     private let searchView = SearchView()
     
     // MARK: - Lifecycle
@@ -27,6 +28,27 @@ final class SearchViewController: BaseViewController {
     
     private func setupNavigation() {
         configureNavigation(title: Constants.Navigation.title)
+    }
+    
+    // MARK: - ForYouViewInput
+    
+    func reloadData() {
+        // Будущее: обновление данных
+        print("Search data reloaded")
+    }
+    
+    func showLoading() {
+        print("Search loading started")
+    }
+    
+    func hideLoading() {
+        print("Search loading finished")
+    }
+    
+    func showError(_ message: String) {
+        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 
