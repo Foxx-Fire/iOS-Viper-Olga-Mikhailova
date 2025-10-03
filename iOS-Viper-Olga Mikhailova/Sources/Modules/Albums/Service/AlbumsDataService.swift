@@ -1,9 +1,5 @@
-//
-//  AlbumsDataService.swift
-//  MVP-Olga Mikhailova
-//
-//  Created by FoxxFire on 19.09.2025.
-//
+
+
 import Foundation
 
 protocol AlbumsDataServiceProtocol {
