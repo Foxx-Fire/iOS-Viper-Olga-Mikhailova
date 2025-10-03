@@ -43,11 +43,7 @@ final class TabBarController: TabBarNavigationProtocol {
     }
     
     private func createAlbumsController() -> UIViewController {
-        let dataService = AlbumsDataService()
-     //   let viewModel = AlbumsViewModel(dataService: dataService)
-     //   let viewController = AlbumsViewController(viewModel: viewModel)
-        let viewModel = AlbumsViewModelCombine(dataService: dataService)
-        let viewController = AlbumsViewControllerWithCombine(viewModel: viewModel)
+        let viewController = AlbumsModuleBuilder.build()
       
         return viewController
     }

@@ -4,36 +4,25 @@
 //
 //  Created by FoxxFire on 26.09.2025.
 //
-import Combine
+
 import UIKit
 
-final class AlbumsViewControllerWithCombine: BaseViewController {
+final class AlbumsViewController: BaseViewController, AlbumsViewInput {
+
+    // MARK: - VIPER Properties
     
-    // MARK: - Properties
+    var output: AlbumsViewOutput?
     
-    private let viewModel: AlbumsViewModelCombine
-    // для хранения подписок Combine
-    private var cancellables = Set<AnyCancellable>()
+    // MARK: - UI Elements
     
     private lazy var albumsView: AlbumsView = {
         let view = AlbumsView { [weak self] sectionIndex in
-            self?.viewModel.layoutType(for: sectionIndex)
+            self?.output?.layoutType(for: sectionIndex)
         }
         view.setupDataSource(dataSource: self)
         view.setupDelegate(delegate: self)
         return view
     }()
-    
-    //MARK: - Init
-    init(viewModel: AlbumsViewModelCombine) {
-        self.viewModel = viewModel
-        
-        super.init(nibName: nil, bundle: nil)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
     
     // MARK: - Lifecycle
     
@@ -45,42 +34,10 @@ final class AlbumsViewControllerWithCombine: BaseViewController {
         super.viewDidLoad()
         
         setupNavigation()
-        setupBindings()
-        loadData()
+        output?.viewDidLoad() // ← Сообщаем Presenter что View загрузилась
     }
     
-    //MARK: - private methods
-    
-    private func setupBindings() {
-        // Подписываемся на изменения sections через Combine
-        viewModel.$sections // ← Знак $ значит "дай мне Publisher этого свойства"
-            .receive(on: DispatchQueue.main) //  Гарантируем главный поток
-            .sink { [weak self] sections in // Подписываемся на изменения
-                // Этот код выполнится КАЖДЫЙ РАЗ когда sections изменится
-                print("Данные обновились! Секций: \(sections.count)")
-                self?.albumsView.reloadData()
-            }
-            .store(in: &cancellables) //  Сохраняем подписку
-        
-        //  Подписываемся на изменения isLoading
-        viewModel.$isLoading
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isLoading in
-                print("Состояние загрузки: \(isLoading ? "началась" : "закончилась")")
-                isLoading ? self?.showLoading() : self?.hideLoading()
-            }
-            .store(in: &cancellables)
-    }
-    
-    private func showLoading() {
-        // Показываем индикатор загрузки
-        print("Loading started...")
-    }
-    
-    private func hideLoading() {
-        // Скрываем индикатор загрузки
-        print("Loading finished!")
-    }
+    // MARK: - Private Methods
     
     private func setupNavigation() {
         let addAction = UIAction { _ in
@@ -95,13 +52,31 @@ final class AlbumsViewControllerWithCombine: BaseViewController {
         )
     }
     
-    private func loadData() {
-        viewModel.loadData()
+    // MARK: - AlbumsViewInput
+    
+    func reloadData() {
+        albumsView.reloadData()
+    }
+    
+    func showLoading() {
+        // Показываем индикатор загрузки
+        print("Loading started...")
+    }
+    
+    func hideLoading() {
+        // Скрываем индикатор загрузки
+        print("Loading finished!")
+    }
+    
+    func showError(_ message: String) {
+        let alert = UIAlertController(title: "Ошибка", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 
 // MARK: - Constants
-extension AlbumsViewControllerWithCombine {
+extension AlbumsViewController {
     enum Constants {
         enum Navigation {
             static let title = "Albums"
@@ -112,32 +87,33 @@ extension AlbumsViewControllerWithCombine {
 
 // MARK: - UICollectionViewDelegate
 
-extension AlbumsViewControllerWithCombine: UICollectionViewDelegate {
+extension AlbumsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         // Снимаем выделение с анимацией
         collectionView.deselectItem(at: indexPath, animated: true)
+        output?.didSelectItem(at: indexPath) // ← Сообщаем Presenter о тапе
     }
 }
 
 // MARK: - UICollectionViewDataSource
 
-extension AlbumsViewControllerWithCombine: UICollectionViewDataSource {
+extension AlbumsViewController: UICollectionViewDataSource {
     
     // Определяет количество секций в коллекции
     func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return viewModel.numberOfSections()
+        return output?.numberOfSections() ?? 0
     }
     
     // Определяет количество ячеек в конкретной секции
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         
-        return viewModel.numberOfItems(in: section)
+        return output?.numberOfItems(in: section) ?? 0
     }
     
     // Создает и настраивает ячейку для конкретной позиции
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        guard let item = viewModel.item(at: indexPath) else {
+        guard let item = output?.item(at: indexPath) else {
             return UICollectionViewCell()
         }
         
@@ -205,10 +181,10 @@ extension AlbumsViewControllerWithCombine: UICollectionViewDataSource {
         }
         
         header.configure(
-            title: viewModel.headerTitle(for: indexPath.section) ?? "",
-            buttonTitle: viewModel.headerButtonTitle(for: indexPath.section),
+            title: output?.headerTitle(for: indexPath.section) ?? "",
+            buttonTitle: output?.headerButtonTitle(for: indexPath.section),
             buttonAction: { [weak self] in
-                self?.viewModel.didTapHeaderButton(in: indexPath.section)
+                self?.output?.didTapHeaderButton(in: indexPath.section)
             }
         )
         
