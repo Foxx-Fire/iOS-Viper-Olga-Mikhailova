@@ -34,7 +34,18 @@ extension AlbumsPresenter: AlbumsViewOutput {
     }
     
     func didSelectItem(at indexPath: IndexPath) {
-        guard let item = item(at: indexPath) else { return }
+        print(" Получен тап на: \(indexPath)")
+        print(" sections.isEmpty: \(sections.isEmpty)")
+        // Проверяем что данные уже загружены
+        guard !sections.isEmpty else {
+            print("Данные еще не загружены, тап проигнорирован")
+            return
+        }
+        
+        guard let item = item(at: indexPath) else {
+            print("Item не найден по indexPath: \(indexPath)")
+            return }
+        
         print("Selected item: \(item.itemId)")
         router.showAlbumDetail(item)
     }
@@ -92,13 +103,16 @@ extension AlbumsPresenter: AlbumsViewOutput {
 
 extension AlbumsPresenter: AlbumsInteractorOutput {
     func albumsFetched(_ sections: [AlbumSection]) {
+        print("Interactor: данные получены, секций: \(sections.count)")
         self.sections = sections
         view?.hideLoading()
         view?.reloadData()
     }
     
     func albumsFetchFailed(_ error: any Error) {
+        print("Interactor: ошибка загрузки: \(error)")
         view?.hideLoading()
         view?.showError(error.localizedDescription)
     }
 }
+
