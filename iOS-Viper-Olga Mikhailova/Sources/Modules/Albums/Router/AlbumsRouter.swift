@@ -17,8 +17,8 @@ final class AlbumsRouter {
 extension AlbumsRouter: AlbumsRouterInput {
     
     func showAlbumDetail(_ album: CellItemProtocol) {
-        // Здесь будет создание и показ экрана деталей альбома
-        print("Navigating to album detail: \(album.itemId)")
+        let detailVC = AlbumDetailViewController(album: album)
+        viewController?.navigationController?.pushViewController(detailVC, animated: true)
     }
     
     func showError(_ error: any Error) {
